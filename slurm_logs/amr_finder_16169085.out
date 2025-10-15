@@ -1,0 +1,117 @@
+==========================================
+AMR FINDER PLUS - HPC PROCESSING
+==========================================
+Job ID: 16169085
+Node: cpu-q-334
+CPUs: 76
+Start time: Wed Oct 15 14:31:43 BST 2025
+==========================================
+Checking AMRFinder installation...
+4.0.23
+
+Starting parallel processing with 76 CPUs...
+
+================================================================================
+AMR FINDER PLUS - PARALLEL BATCH PROCESSING (FIXED)
+================================================================================
+
+Input directory: /home/dca36/rds/hpc-work/data/BacFormer/processed/ecoli_batches
+Output directory: /home/dca36/rds/hpc-work/data/amr_finder_plus/data/amrf_results
+Found 30 parquet files to process
+Requested CPUs: 76
+Files to process: 30
+Parallel workers that will be active: 30
+
+Start time: 2025-10-15 14:31:45
+================================================================================
+
+Spawning 76 worker processes...
+Pool created with 76 workers
+Starting parallel processing...
+
+
+================================================================================
+PROCESSING COMPLETE
+================================================================================
+
+Total time: 88.1 minutes (5283.4 seconds)
+
+Detailed Results:
+  ✓ ecoli_batch_029.parquet: Completed in 851.1s - 39 genomes, 1189 AMR hits
+  ✓ ecoli_batch_009.parquet: Completed in 5130.2s - 250 genomes, 6210 AMR hits
+  ✓ ecoli_batch_021.parquet: Completed in 5173.1s - 250 genomes, 6449 AMR hits
+  ✓ ecoli_batch_004.parquet: Completed in 5180.9s - 250 genomes, 6733 AMR hits
+  ✓ ecoli_batch_019.parquet: Completed in 5181.7s - 250 genomes, 6858 AMR hits
+  ✓ ecoli_batch_014.parquet: Completed in 5193.6s - 250 genomes, 6463 AMR hits
+  ✓ ecoli_batch_015.parquet: Completed in 5196.8s - 250 genomes, 6630 AMR hits
+  ✓ ecoli_batch_011.parquet: Completed in 5203.3s - 250 genomes, 6750 AMR hits
+  ✓ ecoli_batch_010.parquet: Completed in 5206.1s - 250 genomes, 7042 AMR hits
+  ✓ ecoli_batch_027.parquet: Completed in 5208.1s - 250 genomes, 6868 AMR hits
+  ✓ ecoli_batch_016.parquet: Completed in 5212.3s - 250 genomes, 7289 AMR hits
+  ✓ ecoli_batch_008.parquet: Completed in 5217.9s - 250 genomes, 6863 AMR hits
+  ✓ ecoli_batch_005.parquet: Completed in 5218.7s - 250 genomes, 6951 AMR hits
+  ✓ ecoli_batch_022.parquet: Completed in 5223.3s - 250 genomes, 7297 AMR hits
+  ✓ ecoli_batch_001.parquet: Completed in 5224.4s - 250 genomes, 6942 AMR hits
+  ✓ ecoli_batch_006.parquet: Completed in 5228.3s - 250 genomes, 6923 AMR hits
+  ✓ ecoli_batch_013.parquet: Completed in 5231.3s - 250 genomes, 7107 AMR hits
+  ✓ ecoli_batch_003.parquet: Completed in 5234.0s - 250 genomes, 7409 AMR hits
+  ✓ ecoli_batch_018.parquet: Completed in 5234.9s - 250 genomes, 7508 AMR hits
+  ✓ ecoli_batch_002.parquet: Completed in 5237.2s - 250 genomes, 6985 AMR hits
+  ✓ ecoli_batch_028.parquet: Completed in 5243.7s - 250 genomes, 7369 AMR hits
+  ✓ ecoli_batch_020.parquet: Completed in 5245.6s - 250 genomes, 7192 AMR hits
+  ✓ ecoli_batch_024.parquet: Completed in 5251.0s - 250 genomes, 7546 AMR hits
+  ✓ ecoli_batch_025.parquet: Completed in 5256.1s - 250 genomes, 7544 AMR hits
+  ✓ ecoli_batch_026.parquet: Completed in 5261.3s - 250 genomes, 7913 AMR hits
+  ✓ ecoli_batch_012.parquet: Completed in 5262.1s - 250 genomes, 7713 AMR hits
+  ✓ ecoli_batch_000.parquet: Completed in 5263.1s - 250 genomes, 7190 AMR hits
+  ✓ ecoli_batch_023.parquet: Completed in 5263.5s - 250 genomes, 8066 AMR hits
+  ✓ ecoli_batch_017.parquet: Completed in 5276.5s - 250 genomes, 7742 AMR hits
+  ✓ ecoli_batch_007.parquet: Completed in 5283.1s - 250 genomes, 7702 AMR hits
+
+Overall Summary:
+  Files processed: 30/30
+  Files failed: 0/30
+  Total genomes processed: 7289
+  Total AMR hits found: 208443
+  Average processing time per file: 176.1s
+
+Output files created (7289):
+  7289 genome result files (too many to list individually)
+
+Log files created (30):
+  ecoli_batch_000_processing.log
+  ecoli_batch_001_processing.log
+  ecoli_batch_002_processing.log
+  ecoli_batch_003_processing.log
+  ecoli_batch_004_processing.log
+  ecoli_batch_005_processing.log
+  ecoli_batch_006_processing.log
+  ecoli_batch_007_processing.log
+  ecoli_batch_008_processing.log
+  ecoli_batch_009_processing.log
+  ecoli_batch_010_processing.log
+  ecoli_batch_011_processing.log
+  ecoli_batch_012_processing.log
+  ecoli_batch_013_processing.log
+  ecoli_batch_014_processing.log
+  ecoli_batch_015_processing.log
+  ecoli_batch_016_processing.log
+  ecoli_batch_017_processing.log
+  ecoli_batch_018_processing.log
+  ecoli_batch_019_processing.log
+  ecoli_batch_020_processing.log
+  ecoli_batch_021_processing.log
+  ecoli_batch_022_processing.log
+  ecoli_batch_023_processing.log
+  ecoli_batch_024_processing.log
+  ecoli_batch_025_processing.log
+  ecoli_batch_026_processing.log
+  ecoli_batch_027_processing.log
+  ecoli_batch_028_processing.log
+  ecoli_batch_029_processing.log
+================================================================================
+
+==========================================
+Job completed with exit code: 0
+End time: Wed Oct 15 15:59:48 BST 2025
+==========================================
