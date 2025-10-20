@@ -6,19 +6,29 @@ from pathlib import Path
 from tqdm import tqdm
 
 
-def process_parquet_file(input_file, n_samples=None, verbose=True, log_file=None):
+def process_parquet_file(input_file, n_samples=None, verbose=True, log_file=None, 
+                         skip_genomes=None, fasta_dir=None, output_dir=None,
+                         start_idx=None, end_idx=None, chunk_id=None, df_chunk=None):
     """
-    Process a parquet file through AMR Finder Plus.
+    Process a parquet file (or chunk) through AMR Finder Plus.
     
     Args:
-        input_file (str or Path): Path to input parquet file
+        input_file (str or Path): Path to input parquet file (used for naming if df_chunk provided)
         n_samples (int, optional): Number of genomes to process. If None, process all.
         verbose (bool): Whether to print progress information
         log_file (str or Path, optional): Path to log file for output
+        skip_genomes (set, optional): Set of genome names to skip (already processed)
+        fasta_dir (Path, optional): Directory for FASTA files. Defaults to standard location.
+        output_dir (Path, optional): Directory for AMR results. Defaults to standard location.
+        start_idx (int, optional): Start index for processing chunk (row number in parquet)
+        end_idx (int, optional): End index for processing chunk (exclusive, row number in parquet)
+        chunk_id (int, optional): Chunk identifier for logging
+        df_chunk (pd.DataFrame, optional): Pre-loaded dataframe chunk. If provided, skips file reading.
         
     Returns:
         tuple: (output_dir_path, stats_dict) where stats_dict contains:
             - genomes_processed
+            - genomes_skipped
             - unique_proteins
             - duplicate_proteins
             - amr_hits
@@ -32,29 +42,58 @@ def process_parquet_file(input_file, n_samples=None, verbose=True, log_file=None
             with open(log_file, 'a') as f:
                 f.write(message + '\n')
     
-    # Setup directories
-    output_dir = Path("/home/dca36/rds/hpc-work/data/amr_finder_plus/data")
-    fasta_dir = output_dir / "fasta_files"
-    output_dir = output_dir / "amrf_results"
+    # Initialize skip_genomes if not provided
+    if skip_genomes is None:
+        skip_genomes = set()
+    
+    # Setup directories - use provided paths or defaults
+    if fasta_dir is None:
+        fasta_dir = Path("/home/dca36/rds/hpc-work/data/amr_finder_plus/data/fasta_files")
+    else:
+        fasta_dir = Path(fasta_dir)
+    
+    if output_dir is None:
+        output_dir = Path("/home/dca36/rds/hpc-work/data/amr_finder_plus/data/amrf_results")
+    else:
+        output_dir = Path(output_dir)
     
     # Create directories
-    output_dir.mkdir(exist_ok=True)
-    fasta_dir.mkdir(exist_ok=True)
-    output_dir.mkdir(exist_ok=True)
+    fasta_dir.mkdir(parents=True, exist_ok=True)
+    output_dir.mkdir(parents=True, exist_ok=True)
     
     input_file = Path(input_file)
     input_basename = input_file.stem  # e.g., "ecoli_batch_000"
     
-    # Read the parquet file
-    log(f"Reading: {input_file}")
-    ecoli_df = pd.read_parquet(input_file, engine='pyarrow')
+    # Add chunk identifier to basename if processing a chunk
+    if chunk_id is not None:
+        input_basename = f"{input_basename}_chunk{chunk_id}"
+    
+    # Use pre-loaded chunk if provided, otherwise read from file
+    chunk_info = f" (chunk {chunk_id})" if chunk_id is not None else ""
+    
+    if df_chunk is not None:
+        # Use pre-loaded dataframe chunk
+        log(f"Processing pre-loaded chunk from: {input_file}{chunk_info}")
+        ecoli_df = df_chunk
+    else:
+        # Read the parquet file
+        log(f"Reading: {input_file}{chunk_info}")
+        ecoli_df = pd.read_parquet(input_file, engine='pyarrow')
+        
+        # Handle chunk processing (only needed if not pre-chunked)
+        total_genomes = len(ecoli_df)
+        if start_idx is not None or end_idx is not None:
+            start = start_idx if start_idx is not None else 0
+            end = end_idx if end_idx is not None else len(ecoli_df)
+            log(f"Processing chunk: rows {start} to {end} of {total_genomes}")
+            ecoli_df = ecoli_df.iloc[start:end]
     
     # Limit to n_samples if specified
     if n_samples is not None:
         ecoli_df = ecoli_df.head(n_samples)
         log(f"⚠ Limited to first {n_samples} genomes for testing")
     
-    log(f"Loaded {len(ecoli_df)} genomes")
+    log(f"Processing {len(ecoli_df)} genomes")
     log(f"Columns: {ecoli_df.columns.tolist()}")
     
     # Calculate protein and contig statistics
@@ -95,9 +134,12 @@ def process_parquet_file(input_file, n_samples=None, verbose=True, log_file=None
     global_unique_count = 0
     total_amr_hits = 0
     genomes_with_hits = 0
+    genomes_skipped = 0
     
     log("\n" + "="*80)
     log(f"Processing {len(ecoli_df)} genomes...")
+    if skip_genomes:
+        log(f"Will skip {len(skip_genomes)} already-processed genomes")
     log("="*80 + "\n")
     
     # Process each genome
@@ -106,6 +148,12 @@ def process_parquet_file(input_file, n_samples=None, verbose=True, log_file=None
     for genome_idx in iterator:
         genome_row = ecoli_df.iloc[genome_idx]
         genome_name = genome_row['genome_name']
+        
+        # Skip if genome already processed
+        if genome_name in skip_genomes:
+            genomes_skipped += 1
+            continue
+        
         protein_sequences_by_contig = genome_row['protein_sequence']
         protein_ids_by_contig = genome_row['protein_id']
         
@@ -171,7 +219,9 @@ def process_parquet_file(input_file, n_samples=None, verbose=True, log_file=None
     log("PROCESSING COMPLETE")
     log("="*80)
     log("\nResults summary:")
-    log(f"  Genomes processed: {len(ecoli_df)}")
+    log(f"  Genomes in file: {len(ecoli_df)}")
+    log(f"  Genomes skipped (already processed): {genomes_skipped}")
+    log(f"  Genomes processed: {len(ecoli_df) - genomes_skipped}")
     log(f"  Genomes with AMR hits: {genomes_with_hits}")
     log(f"  Total unique proteins: {global_unique_count}")
     log(f"  Total duplicate proteins (skipped): {global_duplicate_count}")
@@ -182,7 +232,8 @@ def process_parquet_file(input_file, n_samples=None, verbose=True, log_file=None
     
     # Return stats
     stats = {
-        'genomes_processed': len(ecoli_df),
+        'genomes_processed': len(ecoli_df) - genomes_skipped,
+        'genomes_skipped': genomes_skipped,
         'unique_proteins': global_unique_count,
         'duplicate_proteins': global_duplicate_count,
         'amr_hits': total_amr_hits
