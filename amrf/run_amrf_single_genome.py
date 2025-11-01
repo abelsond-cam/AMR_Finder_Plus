@@ -1,6 +1,5 @@
 import pandas as pd
 import subprocess
-import os
 from pathlib import Path
 
 # Setup directories
@@ -9,17 +8,17 @@ temp_dir = workspace / "temp"
 temp_dir.mkdir(exist_ok=True)
 
 # Read the parquet file
-ecoli_file = "/home/dca36/rds/hpc-work/data/BacFormer/processed/ecoli_batches/ecoli_batch_000.parquet"
-ecoli_df = pd.read_parquet(ecoli_file, engine='pyarrow')
+parquet_file = "/home/dca36/rds/hpc-work/data/BacFormer/raw/ast/protein_sequences/campylobacter_jejuni/genomes_chunk_0.parquet"
+df = pd.read_parquet(parquet_file, engine='pyarrow')
 
-print(f"Loaded {len(ecoli_df)} genomes")
-print(f"Columns: {ecoli_df.columns.tolist()}")
+print(f"Loaded {len(df)} genomes")
+print(f"Columns: {df.columns.tolist()}")
 
 # Calculate protein and contig statistics
 total_proteins = 0
 total_contigs = 0
 
-for idx, row in ecoli_df.iterrows():
+for idx, row in df.iterrows():
     # protein_id and protein_sequence are lists of lists: [[contig1_proteins...], [contig2_proteins...], ...]
     protein_ids_by_contig = row['protein_id']
     
@@ -32,15 +31,15 @@ for idx, row in ecoli_df.iterrows():
         total_proteins += len(contig_proteins)
 
 print(f"\nDataset statistics:")
-print(f"  Total genomes: {len(ecoli_df)}")
+print(f"  Total genomes: {len(df)}")
 print(f"  Total contigs: {total_contigs}")
 print(f"  Total proteins: {total_proteins}")
-print(f"  Average contigs per genome: {total_contigs/len(ecoli_df):.2f}")
-print(f"  Average proteins per genome: {total_proteins/len(ecoli_df):.2f}")
+print(f"  Average contigs per genome: {total_contigs/len(df):.2f}")
+print(f"  Average proteins per genome: {total_proteins/len(df):.2f}")
 print(f"  Average proteins per contig: {total_proteins/total_contigs:.2f}")
 
 # Get first genome
-first_genome = ecoli_df.iloc[0]
+first_genome = df.iloc[0]
 genome_name = first_genome['genome_name']
 protein_sequences_by_contig = first_genome['protein_sequence']  # List of lists
 protein_ids_by_contig = first_genome['protein_id']  # List of lists
@@ -82,26 +81,40 @@ if org_check.returncode == 0:
     print("Available organisms:")
     print(org_check.stdout)
     
-    # Look for Escherichia in the list
-    if "Escherichia" in org_check.stdout:
-        organism_name = "Escherichia"
+    # Look for Campylobacter in the list
+    organism_name = None
+    if "Campylobacter" in org_check.stdout:
+        #Possible organisms: Acinetobacter_baumannii, Bordetella_pertussis, Burkholderia_cepacia, Burkholderia_mallei, Burkholderia_pseudomallei, Campylobacter, Citrobacter_freundii, Clostridioides_difficile, Corynebacterium_diphtheriae, Enterobacter_asburiae, Enterobacter_cloacae, Enterococcus_faecalis, Enterococcus_faecium, Escherichia, Haemophilus_influenzae, Klebsiella_oxytoca, Klebsiella_pneumoniae, Neisseria_gonorrhoeae, Neisseria_meningitidis, Pseudomonas_aeruginosa, Salmonella, Serratia_marcescens, Staphylococcus_aureus, Staphylococcus_pseudintermedius, Streptococcus_agalactiae, Streptococcus_pneumoniae, Streptococcus_pyogenes, Vibrio_cholerae, Vibrio_parahaemolyticus, Vibrio_vulnificus
+        organism_name = "Campylobacter"
+        # Print the full output to see exact format
+        print("\nSearching for Campylobacter in organism list...")
+        for line in org_check.stdout.split('\n'):
+            if 'Campylobacter' in line:
+                print(f"Found: {line}")
+        organism_name = "Campylobacter"
         print(f"\n✓ Using organism: {organism_name}")
     else:
-        print("\n⚠ 'Escherichia' not found in list - check output above for correct name")
-        organism_name = "Escherichia"  # Default, but may need to change
+        print("\n⚠ 'Campylobacter' not found in list - check output above for correct name")
+        organism_name = None  # Will try without organism parameter
 else:
-    organism_name = "Escherichia"
-    print(f"Could not list organisms, using default: {organism_name}")
+    organism_name = None
+    print(f"Could not list organisms, will try without organism parameter")
 
 # Run AMR Finder Plus
 output_file = temp_dir / "amr_output.tsv"
+
+# Build command - try with organism first, fall back to without if needed
 cmd = [
     "amrfinder",
     "--protein", str(fasta_file),
-    "--organism", organism_name,
     "--output", str(output_file),
     "--plus"
 ]
+
+if organism_name:
+    cmd.extend(["--organism", organism_name])
+else:
+    print("\n⚠ Note: Running without --organism parameter")
 
 print(f"\nRunning AMRFinder command: {' '.join(cmd)}")
 result = subprocess.run(cmd, capture_output=True, text=True)
